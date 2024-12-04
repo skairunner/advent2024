@@ -56,6 +56,34 @@ fn match_constant(state: &mut State, ch: &char, should_be: &char, transition_to:
     }
 }
 
+/// Split the string by do and dont, and only return strings that are "do"
+fn preparse(input: &str) -> Vec<String> {
+    // Split by donts and dos
+    let strings: Vec<&str> = input.split_inclusive("do()")
+        .flat_map(|do_| do_.split_inclusive("don't()"))
+        .collect();
+    // Now the strings should either end in do() or don't(). Check that and sort accordingly
+    let mut is_do = true;
+    let mut out = vec![];
+    for s in strings {
+        // Copy string into output vector
+        if is_do {
+            out.push(s.to_string());
+        }
+
+        // Then update status
+        is_do = if s.ends_with("do()") {
+            true
+        } else if s.ends_with("don't()") {
+            false
+        } else {
+            is_do
+        };
+    }
+
+    out
+}
+
 /// Parse string and return all the mul operations
 ///
 /// Iteratively read characters, building up a Mul token.
@@ -124,8 +152,10 @@ fn get_answer(m: &[Mul]) -> i64 {
 
 fn main() {
     let input = read_input();
-    let result = parse(&input);
-    let result = get_answer(&result);
+    let input = preparse(&input);
+    let result: i64 = input.iter()
+        .map(|subinput| get_answer(&parse(&subinput)))
+        .sum();
     println!("{result}")
 }
 
@@ -137,5 +167,15 @@ mod tests {
     fn simple_case() {
         let muls = parse("xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))");
         assert_eq!(get_answer(&muls), 161);
+    }
+
+    #[test]
+    fn part_two_simple() {
+        let input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
+        let input = preparse(input);
+        let result: i64 = input.iter()
+            .map(|subinput| get_answer(&parse(&subinput)))
+            .sum();
+        assert_eq!(result, 48);
     }
 }
