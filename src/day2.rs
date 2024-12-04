@@ -26,15 +26,9 @@ fn is_problematic(prev: &i64, next: &i64, increasing: Option<bool>) -> bool {
         return true;
     }
     match increasing {
-        Some(true) => {
-            prev >= next
-        }
-        Some(false) => {
-            prev <= next
-        }
-        None => {
-            false
-        }
+        Some(true) => prev >= next,
+        Some(false) => prev <= next,
+        None => false,
     }
 }
 
